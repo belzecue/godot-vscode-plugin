@@ -1,5 +1,18 @@
 # Change Log
 
+### 1.1.1
+* Fix bug for GDScript debugger
+* Add TCP protocol support for GDScript language server Godot 3.2.2
+
+### 1.1
+* Add the debugger to the extension
+
+### 1.0.3
+* Fix hover popup position for VSCode 1.42+
+
+### 1.0.1
+* Fix run editor error on windows with default terminal configurations
+
 ### 1.0.0
 * Refactor the whole plugin with gdscript language server support
 * Add webview renderer to show documentations of native symbols.
