@@ -30,6 +30,7 @@ export class GodotTools {
 			this.open_workspace_with_editor().catch(err=>vscode.window.showErrorMessage(err));
 		});
 		vscode.commands.registerCommand("godot-tool.check_status", this.check_client_status.bind(this));
+		vscode.commands.registerCommand("godot-tool.set_scene_file", this.set_scene_file.bind(this));
 
 		this.connection_status.text = "$(sync) Initializing";
 		this.connection_status.command = "godot-tool.check_status";
@@ -47,7 +48,7 @@ export class GodotTools {
 	private open_workspace_with_editor(params = "") {
 
 		return new Promise((resolve, reject) => {
-			let valid = false
+			let valid = false;
 			if (this.workspace_dir) {
 				let cfg = path.join(this.workspace_dir, this.project_file);
 				valid = (fs.existsSync(cfg) && fs.statSync(cfg).isFile());
@@ -62,6 +63,20 @@ export class GodotTools {
 		});
 	}
 
+	private set_scene_file(uri: vscode.Uri) {
+		let right_clicked_scene_path = uri.fsPath
+		let scene_config = get_configuration("scene_file_config");
+		if (scene_config == right_clicked_scene_path) {
+			scene_config = ""
+		}
+		else {
+			scene_config = right_clicked_scene_path
+		}
+		
+		set_configuration("scene_file_config", scene_config);
+	}
+
+
 	private run_editor(params = "") {
 
 		return new Promise((resolve, reject) => {
@@ -70,17 +85,18 @@ export class GodotTools {
 					let cmdEsc = `"${cmd}"`;
 					if (process.platform === "win32") {
 						const POWERSHELL = "powershell.exe";
+						const POWERSHELL_CORE = "pwsh.exe";
 						const shell_plugin = vscode.workspace.getConfiguration("terminal.integrated.shell");
 						let shell = (shell_plugin ? shell_plugin.get("windows", POWERSHELL) : POWERSHELL) || POWERSHELL;
-						if (shell.endsWith(POWERSHELL)) {
+						if (shell.endsWith(POWERSHELL) || shell.endsWith(POWERSHELL_CORE)) {
 							cmdEsc = `&${cmdEsc}`;
 						}
 					}
 					return cmdEsc;
 				};
-				let existingTerminal = vscode.window.terminals.find(t => t.name === TOOL_NAME)
+				let existingTerminal = vscode.window.terminals.find(t => t.name === TOOL_NAME);
 				if (existingTerminal) {
-					existingTerminal.dispose()
+					existingTerminal.dispose();
 				}
 				let terminal = vscode.window.createTerminal(TOOL_NAME);
 				let editorPath = escape_command(path);
@@ -90,14 +106,16 @@ export class GodotTools {
 				resolve();
 			};
 
-			let editorPath = get_configuration("editor_path", "")
+			let editorPath = get_configuration("editor_path", "");
 			editorPath = editorPath.replace("${workspaceRoot}", this.workspace_dir);
 			if (!fs.existsSync(editorPath) || !fs.statSync(editorPath).isFile()) {
 				vscode.window.showOpenDialog({
 						openLabel: "Run",
 						filters: process.platform === "win32" ? {"Godot Editor Binary": ["exe", "EXE"]} : undefined
 					}).then((uris: vscode.Uri[])=> {
-						if (!uris) return;
+						if (!uris) {
+							return;
+						}
 						let path = uris[0].fsPath;
 						if (!fs.existsSync(path) || !fs.statSync(path).isFile()) {
 							reject("Invalid editor path to run the project");
@@ -164,4 +182,4 @@ export class GodotTools {
 			}
 		});
 	}
-};
+}

@@ -2,7 +2,7 @@
 	"name": "godot-tools",
 	"displayName": "godot-tools",
 	"icon": "icon.png",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"description": "Tools for game development with godot game engine",
 	"repository": {
 		"type": "git",
@@ -74,6 +74,10 @@
 					"light": "resources/light/icon_edit.svg",
 					"dark": "resources/dark/icon_edit.svg"
 				}
+			},
+			{
+				"command": "godot-tool.set_scene_file",
+				"title": "Set as Scene File"
 			}
 		],
 		"configuration": {
@@ -81,8 +85,13 @@
 			"title": "Godot Tools configuration",
 			"properties": {
 				"godot_tools.gdscript_lsp_server_protocol": {
-					"type": ["string"],
-					"enum": ["ws", "tcp"],
+					"type": [
+						"string"
+					],
+					"enum": [
+						"ws",
+						"tcp"
+					],
 					"default": "tcp",
 					"enumDescriptions": [
 						"Using WebSocket protocol to connect to Godot 3.2 and Godot 3.2.1",
@@ -100,7 +109,12 @@
 					"default": "",
 					"description": "The absolute path to the Godot editor executable"
 				},
-				"godot-tool.check_status": {
+				"godot_tools.scene_file_config": {
+					"type": "string",
+					"default": "",
+					"description": "The scene file to run"
+				},
+				"godot-tools.check_status": {
 					"type": "string",
 					"default": "",
 					"description": "Check the gdscript language server connection status"
@@ -136,7 +150,7 @@
 			{
 				"language": "gdscript",
 				"scopeName": "source.gdscript",
-				"path": "./configurations/GDScript.tmLanguage.json"
+				"path": "./syntaxes/GDScript.tmLanguage.json"
 			}
 		],
 		"snippets": [
@@ -148,7 +162,7 @@
 		"debuggers": [
 			{
 				"type": "godot",
-				"label": "Godot Debug",
+				"label": "GDScript Godot Debug",
 				"program": "./out/debugger/debug_adapter.js",
 				"runtime": "node",
 				"configurationAttributes": {
@@ -194,7 +208,7 @@
 				},
 				"initialConfigurations": [
 					{
-						"name": "Godot",
+						"name": "GDScript Godot",
 						"type": "godot",
 						"request": "launch",
 						"project": "${workspaceFolder}",
@@ -206,7 +220,7 @@
 				],
 				"configurationSnippets": [
 					{
-						"label": "Godot Debug: Launch",
+						"label": "GDScript Godot Debug: Launch",
 						"description": "A new configuration for debugging a Godot project.",
 						"body": {
 							"type": "godot",
@@ -269,6 +283,12 @@
 					"when": "view == inspect-node && viewItem == editable_value",
 					"group": "inline"
 				}
+			],
+			"explorer/context": [
+				{
+					"command": "godot-tool.set_scene_file",
+					"group": "2_workspace"
+				}
 			]
 		}
 	},
@@ -280,7 +300,8 @@
 		"@types/vscode": "^1.33.0",
 		"@types/ws": "^6.0.1",
 		"tslint": "^5.16.0",
-		"typescript": "^3.5.1"
+		"typescript": "^3.5.1",
+		"vsce": "^1.76.1"
 	},
 	"dependencies": {
 		"await-notify": "^1.0.1",

@@ -13,6 +13,7 @@ import { ServerController } from "./server_controller";
 const { Subject } = require("await-notify");
 import fs = require("fs");
 import { SceneTreeProvider } from "./scene_tree/scene_tree_provider";
+import { get_configuration } from "../utils";
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	address: string;
@@ -25,13 +26,13 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 export class GodotDebugSession extends LoggingDebugSession {
 	private all_scopes: GodotVariable[];
-	private configuration_done = new Subject();
 	private controller?: ServerController;
 	private debug_data = new GodotDebugData();
 	private exception = false;
 	private got_scope = new Subject();
 	private ongoing_inspections: bigint[] = [];
 	private previous_inspections: bigint[] = [];
+	private configuration_done = new Subject();
 
 	public constructor() {
 		super();
@@ -83,6 +84,13 @@ export class GodotDebugSession extends LoggingDebugSession {
 		this.debug_data.scene_tree = scene_tree_provider;
 	}
 
+	public configurationDoneRequest(
+		response: DebugProtocol.ConfigurationDoneResponse,
+		args: DebugProtocol.ConfigurationDoneArguments
+	) {
+		this.configuration_done.notify();
+	}
+
 	public set_scopes(
 		locals: GodotVariable[],
 		members: GodotVariable[],
@@ -126,14 +134,6 @@ export class GodotDebugSession extends LoggingDebugSession {
 			this.previous_inspections = [];
 			this.got_scope.notify();
 		}
-	}
-
-	protected configurationDoneRequest(
-		response: DebugProtocol.ConfigurationDoneResponse,
-		args: DebugProtocol.ConfigurationDoneArguments
-	): void {
-		super.configurationDoneRequest(response, args);
-		this.configuration_done.notify();
 	}
 
 	protected continueRequest(
@@ -225,17 +225,18 @@ export class GodotDebugSession extends LoggingDebugSession {
 		response: DebugProtocol.LaunchResponse,
 		args: LaunchRequestArguments
 	) {
-		await this.configuration_done.wait(2000);
-		this.exception = false;
+		await this.configuration_done.wait(1000);
 		this.debug_data.project_path = args.project;
+		this.exception = false;
 		Mediator.notify("start", [
 			args.project,
 			args.address,
 			args.port,
 			args.launch_game_instance,
 			args.launch_scene,
-			args.scene_file,
+			get_configuration("scene_file_config", "") || args.scene_file,
 		]);
+		
 		this.sendResponse(response);
 	}
 
@@ -302,6 +303,8 @@ export class GodotDebugSession extends LoggingDebugSession {
 			});
 
 			bps = this.debug_data.get_breakpoints(path);
+			// Sort to ensure breakpoints aren't out-of-order, which would confuse VS Code.
+			bps.sort((a, b) => (a.line < b.line ? -1 : 1));
 
 			response.body = {
 				breakpoints: bps.map((bp) => {
